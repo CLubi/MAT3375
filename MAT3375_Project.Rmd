@@ -1,0 +1,89 @@
+---
+title: "MAT3375 Project"
+author: "Hilary Dondji Akazong, Christian Lubin"
+date: "01/12/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Choose a real data set appropriate for regression analysis. Download the data in R platform.
+```{r}
+InterestRate <- read.csv("interestRate.csv");#checked
+LabourProductivity <- read.csv("LabourProductivity.csv");#checked
+CostOfLabour <- read.csv("CostOfLabour.csv");#checked
+EnergyPrices = read.csv("EnergyPrices.csv");#checked
+
+Inflation = read.csv("Inflation2.csv");#checked
+```
+
+# Model selection: test different models using a multiple linear regressions and examine your predictors to keep or delete them from your model. You can use anova and testing for individual predictors
+```{r}
+numModels = (ncol(InterestRate)-1)*(ncol(LabourProductivity)-1)*(ncol(CostOfLabour)-1)*(ncol(EnergyPrices)-1)
+
+#A matrix where each row is a model. The row contains the variable names, the MSE, the F-statistic and the AIC of the model.
+Models =  matrix(data = NA, nrow = numModels, ncol = 7)
+colnames(Models) <- c("InterestRateMeasure","LabourProductivityMeasure","CostOfLabourMeasure","EnergyPricesMeasure",
+                           "MSE","F-Stat","AIC")
+
+```
+
+
+```{r}
+currentRow = 1
+
+for (i in 2:ncol(InterestRate)) {
+  for (j in 2:ncol(LabourProductivity)) {
+    for(k in 2:ncol(CostOfLabour)){
+      for (l in 2:ncol(EnergyPrices)) {
+        #creating the model
+        model <- lm(Inflation[,2]~InterestRate[,i]+LabourProductivity[,j]+CostOfLabour[,k]+EnergyPrices[,l])
+        
+        #adding a row to the matrix of models
+        Models[currentRow,] = c(colnames(InterestRate)[i],#adding the names of the variables used
+                              colnames(LabourProductivity)[j],#
+                              colnames(CostOfLabour)[k],
+                              colnames(EnergyPrices)[l],
+                              mean(model$residuals^2),#adding the mse
+                              summary(model)$fstatistic[1],#adding the fstatistic
+                              AIC(model))
+        
+        currentRow = currentRow +1 #moving on to the next row
+      }
+    }
+    
+  }
+  
+}
+```
+
+When looking at the matrix of models can see that the best (by their f Statistic) is inflation on Quarterly average interest rate of the overnight money market financing v39050, Labour productivity v1409153, Unit labour cost v1409159, and Average price of diesel. We will look into this model specific model and analyse its predictions further.
+
+```{r}
+model1 <- lm(Inflation[,2]~InterestRate[,4]+LabourProductivity[,3]+CostOfLabour[,2]+EnergyPrices[,3])
+summary(model1)
+```
+We can see that for this model all but one the coefficients are significant. the intercept is not at all significant. As a result, we will run another model without the intercept.
+
+```{r}
+model2 <- lm(Inflation[,2]~InterestRate[,4]+LabourProductivity[,3]+CostOfLabour[,2]+EnergyPrices[,3]-1)
+summary(model2)
+```
+By looking at the new f statistic, we can see that the dropping the intercept improved our model.
+
+# Examine your residuals for assumptions you use in your regression mode (example are qq-plot to test normality, histograms , homoscedasticity).
+```{r}
+plot(model2$residuals)
+abline(0,0);
+
+qqnorm(model$residuals)
+qqline(model$residuals);
+
+hist(model2$residuals)
+```
+
+We can see that the residuals appear to be normal and when looking at the qqplot, the theoretical quantiles seem to line up extremely well with the sample samples which is a good sign that the residuals do not suffer from homoscedasticity.
+
+# Finalize your selected model and provide prediction interval. Use figures to explain your descriptive tools.
