@@ -78,8 +78,8 @@ By looking at the new f statistic, we can see that the dropping the intercept im
 plot(model2$residuals)
 abline(0,0);
 
-qqnorm(model$residuals)
-qqline(model$residuals);
+qqnorm(model2$residuals)
+qqline(model2$residuals);
 
 hist(model2$residuals)
 ```
